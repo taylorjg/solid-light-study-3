@@ -7,7 +7,7 @@ import * as U from './utils'
 const Line2D = Line2DInit(THREE)
 const Line2DBasicShader = Line2DBasicShaderInit(THREE)
 
-const LINE_THICKNESS = 0.04
+const LINE_THICKNESS = 0.05
 
 // https://en.wikipedia.org/wiki/Z-fighting
 const MITIGATE_Z_FIGHTING = 0.001
@@ -37,8 +37,8 @@ class FormRenderer {
     scene.add(this.pointMesh)
   }
 
-  update() {
-    const { line, point } = this.form.getShapes()
+  update(stage) {
+    const { line, point } = this.form.getShapes(stage)
     const path = U.vectorsAsArrays(line.points)
     this.lineMesh.geometry.update(path)
     if (point) {
@@ -81,27 +81,52 @@ const main = async () => {
 
   document.addEventListener('keydown', e => {
     switch (e.key) {
-      case '0': return
-      case '1': return
-      case '2': return
-      case '3': return
-      case '4': return
-      case '5': return
-      case '6': return
-      case '7': return
-      case '8': return
-      case '9': return
+      case '0': return onStageButtonClick(0)
+      case '1': return onStageButtonClick(1)
+      case '2': return onStageButtonClick(2)
+      case '3': return onStageButtonClick(3)
+      case '4': return onStageButtonClick(4)
+      case '5': return onStageButtonClick(5)
+      case '6': return onStageButtonClick(6)
+      case '7': return onStageButtonClick(7)
+      case '8': return onStageButtonClick(8)
+      case '9': return onStageButtonClick(9)
     }
   })
 
+  let currentStage = 0
+
+  const STAGE_DESCRIPTIONS = [
+    'Without red dot',
+    'With red dot'
+  ]
+
   const render = () => {
-    leftFormRenderer.update()
-    rightFormRenderer.update()
+    leftFormRenderer.update(currentStage)
+    rightFormRenderer.update(currentStage)
     renderer.render(scene, camera)
     requestAnimationFrame(render)
   }
 
   render()
+
+  const onStageButtonClick = stage => {
+    const stageDescriptionText = STAGE_DESCRIPTIONS[stage]
+    if (stageDescriptionText) {
+      currentStage = stage
+      stageDescription.innerText = stageDescriptionText
+    }
+  }
+
+  const stageDescription = document.getElementById('stage-description')
+  const stageButtons = Array.from(document.querySelectorAll('#stage-buttons button'))
+  
+  stageButtons.forEach(button => {
+    const stage = button.dataset.stage
+    button.addEventListener('click', () => onStageButtonClick(stage))
+  })
+
+  onStageButtonClick(0)
 }
 
 main()

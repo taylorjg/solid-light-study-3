@@ -120,7 +120,7 @@ export class LeavingForm {
       : travellingWavePointsTail.reverse().concat(ellipsePoints)
   }
 
-  getShapes() {
+  getShapes(stage) {
 
     const tickRatio = this.tick / MAX_TICKS
     const a = this.travellingWaveAmplitude(tickRatio)
@@ -182,7 +182,7 @@ export class LeavingForm {
 
     return {
       line: new Line(combinedPoints),
-      point: new Point(p)
+      point: stage == 1 ? new Point(p) : undefined
     }
   }
 
