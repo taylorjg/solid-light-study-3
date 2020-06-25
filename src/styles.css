@@ -27,7 +27,7 @@ html, body {
 
 .stage-button {
   background-color: #A0AEC0;
-  font-size: large;
+  font-size: larger;
   margin: 0 .2rem;
 }
 
@@ -36,9 +36,9 @@ html, body {
 }
 
 #stage-description {
-  text-align: center;
   color: #ffffff;
-  font-size: small;
+  font-size: larger;
   font-style: italic;
   margin: .5rem;
+  text-align: center;
 }

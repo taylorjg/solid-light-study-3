@@ -120,7 +120,10 @@ const main = async () => {
     'Travelling wave along static radius',
     'Travelling wave along rotating radius',
     'Travelling wave clipped to ellipse with point of intersection highlighted',
-    'Final'
+    'As previous plus elliptical arcs',
+    'As previous plus varying radius length',
+    'As previous plus varying travelling wave amplitude',
+    'As previous plus additional rotation of travelling wave'
   ]
 
   const render = () => {
