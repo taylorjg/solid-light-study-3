@@ -120,9 +120,115 @@ export class LeavingForm {
       : travellingWavePointsTail.reverse().concat(ellipsePoints)
   }
 
-  getShapes(stage) {
+  radiusLength(theta, multiplier = 1) {
+    const x = multiplier * this.rx * Math.cos(theta)
+    const y = multiplier * this.ry * Math.sin(theta)
+    return new THREE.Vector2(x, y).length()
+  }
 
-    const tickRatio = this.tick / MAX_TICKS
+  stage0(tickRatio) {
+    const t = -C.HALF_PI - tickRatio * 5 * C.TWO_PI
+    const x = parametricEllipseX(this.rx)(t)
+    const y = parametricEllipseY(this.ry)(t)
+    const line = new Line([new THREE.Vector2(x, y), new THREE.Vector2()])
+    return {
+      line,
+      showEllipseOutline: true
+    }
+  }
+
+  stage1(tickRatio) {
+    const theta = -C.HALF_PI
+    const r = this.radiusLength(theta, 1.1)
+    const a = 0.15
+    const waveLength = r
+    const k = C.TWO_PI / waveLength
+    const f = 25
+    const omega = C.TWO_PI * f
+    const wt = omega * tickRatio
+    const deltaRadius = r / TRAVELLING_WAVE_POINT_COUNT
+    const travellingWavePoints = U.range(TRAVELLING_WAVE_POINT_COUNT + 1).map(n => {
+      const t = n * deltaRadius
+      const x = parametricTravellingWaveX(a, k, wt, theta)(t)
+      const y = parametricTravellingWaveY(a, k, wt, theta)(t)
+      return new THREE.Vector2(x, y)
+    })
+    const line = new Line(travellingWavePoints)
+    return {
+      line,
+      showEllipseOutline: true
+    }
+  }
+
+  stage2(tickRatio) {
+    const theta = -C.HALF_PI - tickRatio * 5 * C.TWO_PI
+    const r = this.radiusLength(theta, 1.1)
+    const a = 0.15
+    const waveLength = r
+    const k = C.TWO_PI / waveLength
+    const f = 25
+    const omega = C.TWO_PI * f
+    const wt = omega * tickRatio
+    const deltaRadius = r / TRAVELLING_WAVE_POINT_COUNT
+    const travellingWavePoints = U.range(TRAVELLING_WAVE_POINT_COUNT + 1).map(n => {
+      const t = n * deltaRadius
+      const x = parametricTravellingWaveX(a, k, wt, theta)(t)
+      const y = parametricTravellingWaveY(a, k, wt, theta)(t)
+      return new THREE.Vector2(x, y)
+    })
+    const line = new Line(travellingWavePoints)
+    return {
+      line,
+      showEllipseOutline: true
+    }
+  }
+
+  stage3(tickRatio) {
+    const a = 0.15
+    const f = 25
+    const waveLength = Math.min(this.rx, this.ry)
+    const k = C.TWO_PI / waveLength
+    const omega = C.TWO_PI * f
+    const wt = omega * tickRatio
+
+    const desiredAngle = C.TWO_PI * tickRatio
+    const convertedAngle = -C.HALF_PI - desiredAngle
+    const theta = convertedAngle - C.PI
+
+    const t1e = convertedAngle
+    const t2e = this.rx * Math.cos(convertedAngle)
+
+    const { t1, t2 } = newtonsMethod(
+      parametricEllipseX(this.rx),
+      parametricEllipseY(this.ry),
+      parametricTravellingWaveX(a, k, wt, theta),
+      parametricTravellingWaveY(a, k, wt, theta),
+      parametricEllipseXDerivative(this.rx),
+      parametricEllipseYDerivative(this.ry),
+      parametricTravellingWaveXDerivative(a, k, wt, theta),
+      parametricTravellingWaveYDerivative(a, k, wt, theta),
+      t1e,
+      t2e)
+
+    const p = new THREE.Vector2(parametricEllipseX(this.rx)(t1), parametricEllipseY(this.ry)(t1))
+    const r = p.length()
+    const deltaRadius = r / TRAVELLING_WAVE_POINT_COUNT
+    const travellingWavePoints = U.range(TRAVELLING_WAVE_POINT_COUNT + 1).map(n => {
+      const t = t2 + n * deltaRadius
+      const x = parametricTravellingWaveX(a, k, wt, theta)(t)
+      const y = parametricTravellingWaveY(a, k, wt, theta)(t)
+      return new THREE.Vector2(x, y)
+    })
+
+    const line = new Line(travellingWavePoints)
+    return {
+      line,
+      point: new Point(p),
+      showEllipseOutline: true
+    }
+  }
+
+  stage4(tickRatio) {
     const a = this.travellingWaveAmplitude(tickRatio)
     const f = 25
     const waveLength = Math.min(this.rx, this.ry)
@@ -175,19 +281,41 @@ export class LeavingForm {
 
     let combinedPoints = this.combinePoints(ellipsePoints, travellingWavePoints)
 
+    return {
+      line: new Line(combinedPoints)
+    }
+  }
+
+  doStage(stage, tickRatio) {
+    switch (stage) {
+      case 0: return this.stage0(tickRatio)
+      case 1: return this.stage1(tickRatio)
+      case 2: return this.stage2(tickRatio)
+      case 3: return this.stage3(tickRatio)
+      case 4: return this.stage4(tickRatio)
+    }
+  }
+
+  getShapes(stage) {
+
+    const tickRatio = this.tick / MAX_TICKS
+
+    const result = this.doStage(stage, tickRatio)
+
     this.tick += 1
     if (this.tick > MAX_TICKS) {
       this.toggleGrowing()
     }
 
-    return {
-      line: new Line(combinedPoints),
-      point: stage == 1 ? new Point(p) : undefined
-    }
+    return result
   }
 
   toggleGrowing() {
     this.growing = !this.growing
+    this.tick = 0
+  }
+
+  reset() {
     this.tick = 0
   }
 }

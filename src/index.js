@@ -3,14 +3,13 @@ import Line2DInit from 'three-line-2d'
 import Line2DBasicShaderInit from 'three-line-2d/shaders/basic'
 import { LeavingForm } from './leaving'
 import * as U from './utils'
+import * as C from './constants'
+import './styles.css'
 
 const Line2D = Line2DInit(THREE)
 const Line2DBasicShader = Line2DBasicShaderInit(THREE)
 
 const LINE_THICKNESS = 0.05
-
-// https://en.wikipedia.org/wiki/Z-fighting
-const MITIGATE_Z_FIGHTING = 0.001
 
 class FormRenderer {
 
@@ -18,7 +17,9 @@ class FormRenderer {
     this.form = form
     this.applyTransforms = applyTransforms
 
-    const lineGeometry = new Line2D()
+    const points = U.repeat(151, new THREE.Vector2())
+    const path = U.vectorsAsArrays(points)
+    const lineGeometry = new Line2D(path)
     const lineMaterial = new THREE.ShaderMaterial(
       Line2DBasicShader({
         side: THREE.DoubleSide,
@@ -27,18 +28,36 @@ class FormRenderer {
       }))
     this.lineMesh = new THREE.Mesh(lineGeometry, lineMaterial)
     applyTransforms(this.lineMesh)
+    this.lineMesh.renderOrder = 0
     scene.add(this.lineMesh)
 
     const pointGeometry = new THREE.CircleBufferGeometry(LINE_THICKNESS, 32)
     const pointMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 })
     this.pointMesh = new THREE.Mesh(pointGeometry, pointMaterial)
-    this.pointMesh.position.z = MITIGATE_Z_FIGHTING
     this.pointMesh.visible = false
+    this.pointMesh.renderOrder = 1
     scene.add(this.pointMesh)
+
+    const deltaAngle = C.TWO_PI / 100
+    const ellipsePoints = U.range(101).map(n => new THREE.Vector2(
+      2 * Math.cos(n * deltaAngle),
+      1.6 * Math.sin(n * deltaAngle)))
+    const ellipsePath = U.vectorsAsArrays(ellipsePoints)
+    const ellipseGeometry = new Line2D(ellipsePath)
+    const ellipseMaterial = new THREE.ShaderMaterial(
+      Line2DBasicShader({
+        side: THREE.DoubleSide,
+        diffuse: 0x808080,
+        thickness: 0.01
+      }))
+    this.ellipseMesh = new THREE.Mesh(ellipseGeometry, ellipseMaterial)
+    applyTransforms(this.ellipseMesh)
+    this.ellipseMesh.renderOrder = -1
+    scene.add(this.ellipseMesh)
   }
 
   update(stage) {
-    const { line, point } = this.form.getShapes(stage)
+    const { line, point, showEllipseOutline } = this.form.getShapes(stage)
     const path = U.vectorsAsArrays(line.points)
     this.lineMesh.geometry.update(path)
     if (point) {
@@ -49,6 +68,7 @@ class FormRenderer {
     } else {
       this.pointMesh.visible = false
     }
+    this.ellipseMesh.visible = Boolean(showEllipseOutline)
   }
 }
 
@@ -62,16 +82,15 @@ const main = async () => {
 
   const scene = new THREE.Scene()
 
-  const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 50)
-  camera.position.set(1, 1, 8)
-  camera.lookAt(new THREE.Vector3(0, 0, 0))
+  const camera = new THREE.PerspectiveCamera(65, w / h, 0.1, 50)
+  camera.position.set(0, 0, 5)
   scene.add(camera)
 
   const leftForm = new LeavingForm(2, 1.6, true)
   const rightForm = new LeavingForm(2, 1.6, false)
 
-  const leftFormRenderer = new FormRenderer(leftForm, mesh => mesh.translateX(-2.2).translateY(0.5), scene)
-  const rightFormRenderer = new FormRenderer(rightForm, mesh => mesh.translateX(2.2).translateY(0.5), scene)
+  const leftFormRenderer = new FormRenderer(leftForm, mesh => mesh.translateX(-2.2), scene)
+  const rightFormRenderer = new FormRenderer(rightForm, mesh => mesh.translateX(2.2), scene)
 
   window.addEventListener('resize', () => {
     renderer.setSize(container.offsetWidth, container.offsetHeight)
@@ -94,11 +113,14 @@ const main = async () => {
     }
   })
 
-  let currentStage = 0
+  let currentStage
 
   const STAGE_DESCRIPTIONS = [
-    'Without red dot',
-    'With red dot'
+    'Rotating radius',
+    'Travelling wave along static radius',
+    'Travelling wave along rotating radius',
+    'Travelling wave clipped to ellipse with point of intersection highlighted',
+    'Final'
   ]
 
   const render = () => {
@@ -108,25 +130,44 @@ const main = async () => {
     requestAnimationFrame(render)
   }
 
-  render()
+  const updateActiveStageButton = stage => {
+    currentStage = stage
+    const stageButtonElements = Array.from(document.querySelectorAll('.stage-button'))
+    stageButtonElements.forEach((stageButtonElement, index) => {
+      if (index == stage) {
+        stageButtonElement.setAttribute('class', 'stage-button stage-button--active')
+        stageButtonElement.focus()
+      } else {
+        stageButtonElement.setAttribute('class', 'stage-button')
+      }
+    })
+  }
 
   const onStageButtonClick = stage => {
-    const stageDescriptionText = STAGE_DESCRIPTIONS[stage]
-    if (stageDescriptionText) {
-      currentStage = stage
-      stageDescription.innerText = stageDescriptionText
+    const stageDescription = STAGE_DESCRIPTIONS[stage]
+    if (stageDescription) {
+      updateActiveStageButton(stage)
+      const stageDescriptionElement = document.getElementById('stage-description')
+      stageDescriptionElement.innerText = stageDescription
+      leftForm.reset()
+      rightForm.reset()
     }
   }
 
-  const stageDescription = document.getElementById('stage-description')
-  const stageButtons = Array.from(document.querySelectorAll('#stage-buttons button'))
-  
-  stageButtons.forEach(button => {
-    const stage = button.dataset.stage
-    button.addEventListener('click', () => onStageButtonClick(stage))
-  })
+  const createStageButton = stage => {
+    const parentElement = document.getElementById('stage-buttons')
+    const stageButtonElement = document.createElement('button')
+    stageButtonElement.setAttribute('class', 'stage-button')
+    stageButtonElement.innerText = stage
+    stageButtonElement.addEventListener('click', () => onStageButtonClick(stage))
+    parentElement.appendChild(stageButtonElement)
+  }
+
+  STAGE_DESCRIPTIONS.forEach((_, index) => createStageButton(index))
 
   onStageButtonClick(0)
+  renderer.render(scene, camera)
+  render()
 }
 
 main()
