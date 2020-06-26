@@ -10,8 +10,8 @@ GH_PAGES_DIR=$DIR/../solid-light-study-3-gh-pages
 
 cd "$GH_PAGES_DIR"
 
-# git checkout gh-pages
-# git rm -r "$GH_PAGES_DIR/*"
+git checkout gh-pages
+git rm -r "$GH_PAGES_DIR/*"
 cp -R "$DIR/server/public/" .
 git add -A
 git commit -m "Deploy to gh-pages branch"
