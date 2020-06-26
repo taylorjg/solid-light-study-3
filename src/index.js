@@ -111,14 +111,14 @@ const main = async () => {
       case '7': return onStageButtonClick(7)
       case '8': return onStageButtonClick(8)
       case '9': return onStageButtonClick(9)
-      case 's': return setSpeed(1)
-      case 'f': return setSpeed(5)
+      case 's': return onSpeedButtonClick(1)
+      case 'f': return onSpeedButtonClick(5)
     }
   })
 
-  const setSpeed = multipler => {
-    leftForm.setSpeed(multipler)
-    rightForm.setSpeed(multipler)
+  const setSpeed = multiplier => {
+    leftForm.setSpeed(multiplier)
+    rightForm.setSpeed(multiplier)
   }
 
   let currentStage
@@ -165,6 +165,19 @@ const main = async () => {
     }
   }
 
+  const onSpeedButtonClick = multiplier => {
+    setSpeed(multiplier)
+    const speedButtonElements = Array.from(document.querySelectorAll('.speed-button'))
+    speedButtonElements.forEach(speedButtonElement => {
+      if (multiplier === Number(speedButtonElement.dataset.multiplier)) {
+        speedButtonElement.setAttribute('class', 'speed-button speed-button--active')
+        speedButtonElement.focus()
+      } else {
+        speedButtonElement.setAttribute('class', 'speed-button')
+      }
+    })
+  }
+
   const createStageButton = stage => {
     const parentElement = document.getElementById('stage-buttons')
     const stageButtonElement = document.createElement('button')
@@ -176,6 +189,12 @@ const main = async () => {
 
   STAGE_DESCRIPTIONS.forEach((_, index) => createStageButton(index))
 
+  Array.from(document.querySelectorAll('.speed-button')).forEach(speedButtonElement => {
+    const multiplier = Number(speedButtonElement.dataset.multiplier)
+    speedButtonElement.addEventListener('click', () => onSpeedButtonClick(multiplier))
+  })
+
+  onSpeedButtonClick(1)
   onStageButtonClick(0)
   renderer.render(scene, camera)
   render()
