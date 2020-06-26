@@ -26,13 +26,15 @@ html, body {
 }
 
 .stage-button {
-  background-color: #A0AEC0;
+  background-color: #BEE3F8; /* Blue 200 */
+  color: #000000;
   font-size: larger;
   margin: 0 .2rem;
 }
 
 .stage-button--active {
-  background-color: #E53E3E;
+  color: #ffffff;
+  background-color: #3182CE; /* Blue 600 */
 }
 
 #stage-description {
@@ -41,4 +43,14 @@ html, body {
   font-style: italic;
   margin: .5rem;
   text-align: center;
+}
+
+.version {
+  bottom: 0;
+  color: #ffffff;
+  font-size: smaller;
+  font-style: italic;
+  margin: 1rem;
+  position: fixed;
+  right: 0;
 }
