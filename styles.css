@@ -13,16 +13,34 @@ html, body {
   width: 100%;
 }
 
-#stage-controls {
+#controls {
   bottom: 0;
   left: 50%;
   position: fixed;
   transform: translateX(-50%);
 }
 
-#stage-buttons {
+#buttons {
   display: flex;
   justify-content: center;
+}
+
+.buttons-label {
+  color: #ffffff;
+  margin-right: .25rem;
+}
+
+#stage-buttons {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+
+#speed-buttons {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  margin-left: 2rem;
 }
 
 .stage-button {
@@ -35,6 +53,18 @@ html, body {
 .stage-button--active {
   color: #ffffff;
   background-color: #3182CE; /* Blue 600 */
+}
+
+.speed-button {
+  background-color: #FED7E2; /* Pink 200 */
+  color: #000000;
+  font-size: larger;
+  margin: 0 .2rem;
+}
+
+.speed-button--active {
+  color: #ffffff;
+  background-color: #D53F8C; /* Pink 600 */
 }
 
 #stage-description {
