@@ -1,0 +1,56 @@
+/* @tailwind base; */
+/* @tailwind components; */
+/* @tailwind utilities; */
+
+html, body {
+  height: 100%;
+  margin: 0px;
+  width: 100%;
+}
+
+#container {
+  height: 100%;
+  width: 100%;
+}
+
+#stage-controls {
+  bottom: 0;
+  left: 50%;
+  position: fixed;
+  transform: translateX(-50%);
+}
+
+#stage-buttons {
+  display: flex;
+  justify-content: center;
+}
+
+.stage-button {
+  background-color: #BEE3F8; /* Blue 200 */
+  color: #000000;
+  font-size: larger;
+  margin: 0 .2rem;
+}
+
+.stage-button--active {
+  color: #ffffff;
+  background-color: #3182CE; /* Blue 600 */
+}
+
+#stage-description {
+  color: #ffffff;
+  font-size: larger;
+  font-style: italic;
+  margin: .5rem;
+  text-align: center;
+}
+
+.version {
+  bottom: 0;
+  color: #ffffff;
+  font-size: smaller;
+  font-style: italic;
+  margin: 1rem;
+  position: fixed;
+  right: 0;
+}
