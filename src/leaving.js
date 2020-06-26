@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import { newtonsMethod } from './newtons-method'
 import { Line } from './line'
-import { Point } from './point'
 import * as U from './utils'
 import * as C from './constants'
 
@@ -51,12 +50,16 @@ const easeInOutQuint = x =>
 const MAX_TICKS = 10000
 const ELLIPSE_POINT_COUNT = 100
 const TRAVELLING_WAVE_POINT_COUNT = 50
+const F = 25
+const OMEGA = C.TWO_PI * F
 
 export class LeavingForm {
 
   constructor(rx, ry, initiallyGrowing) {
     this.rx = rx
     this.ry = ry
+    const waveLength = Math.min(this.rx, this.ry)
+    this.k = C.TWO_PI / waveLength
     this.growing = initiallyGrowing
     this.tick = 0
   }
@@ -113,6 +116,59 @@ export class LeavingForm {
     return maxAmplitude * easeInOutQuint(t)
   }
 
+  findPointOfIntersection(tickRatio, a, wt) {
+
+    const clockFaceAngle = C.TWO_PI * tickRatio
+    const actualAngle = -C.HALF_PI - clockFaceAngle
+    const theta = actualAngle - C.PI
+
+    const t1e = actualAngle
+    const t2e = this.rx * Math.cos(actualAngle)
+
+    const { t1, t2, } = newtonsMethod(
+      parametricEllipseX(this.rx),
+      parametricEllipseY(this.ry),
+      parametricTravellingWaveX(a, this.k, wt, theta),
+      parametricTravellingWaveY(a, this.k, wt, theta),
+      parametricEllipseXDerivative(this.rx),
+      parametricEllipseYDerivative(this.ry),
+      parametricTravellingWaveXDerivative(a, this.k, wt, theta),
+      parametricTravellingWaveYDerivative(a, this.k, wt, theta),
+      t1e,
+      t2e)
+
+    const p = new THREE.Vector2(
+      parametricEllipseX(this.rx)(t1),
+      parametricEllipseY(this.ry)(t1))
+
+    const radius = p.length()
+
+    return { theta, t1, t2, p, radius }
+  }
+
+  getTravellingWavePoints(t2, a, wt, radius, theta) {
+    const deltaRadius = radius / TRAVELLING_WAVE_POINT_COUNT
+    return U.range(TRAVELLING_WAVE_POINT_COUNT + 1).map(n => {
+      const t = t2 + n * deltaRadius
+      const x = parametricTravellingWaveX(a, this.k, wt, theta)(t)
+      const y = parametricTravellingWaveY(a, this.k, wt, theta)(t)
+      return new THREE.Vector2(x, y)
+    })
+  }
+
+  getEllipsePoints(t1) {
+    const [startAngle, endAngle] = this.growing
+      ? [-C.HALF_PI, t1]
+      : [t1, -C.HALF_PI - C.TWO_PI]
+    const deltaAngle = (endAngle - startAngle) / ELLIPSE_POINT_COUNT
+    return U.range(ELLIPSE_POINT_COUNT + 1).map(n => {
+      let t = startAngle + n * deltaAngle
+      let x = parametricEllipseX(this.rx)(t)
+      let y = parametricEllipseY(this.ry)(t)
+      return new THREE.Vector2(x, y)
+    })
+  }
+
   combinePoints(ellipsePoints, travellingWavePoints) {
     const travellingWavePointsTail = travellingWavePoints.slice(1)
     return this.growing
@@ -120,7 +176,7 @@ export class LeavingForm {
       : travellingWavePointsTail.reverse().concat(ellipsePoints)
   }
 
-  radiusLength(theta, multiplier = 1) {
+  getEllipseRadius(theta, multiplier = 1) {
     const x = multiplier * this.rx * Math.cos(theta)
     const y = multiplier * this.ry * Math.sin(theta)
     return new THREE.Vector2(x, y).length()
@@ -139,20 +195,10 @@ export class LeavingForm {
 
   stage1(tickRatio) {
     const theta = -C.HALF_PI
-    const r = this.radiusLength(theta, 1.1)
+    const radius = this.getEllipseRadius(theta, 1.1)
     const a = 0.15
-    const waveLength = r
-    const k = C.TWO_PI / waveLength
-    const f = 25
-    const omega = C.TWO_PI * f
-    const wt = omega * tickRatio
-    const deltaRadius = r / TRAVELLING_WAVE_POINT_COUNT
-    const travellingWavePoints = U.range(TRAVELLING_WAVE_POINT_COUNT + 1).map(n => {
-      const t = n * deltaRadius
-      const x = parametricTravellingWaveX(a, k, wt, theta)(t)
-      const y = parametricTravellingWaveY(a, k, wt, theta)(t)
-      return new THREE.Vector2(x, y)
-    })
+    const wt = OMEGA * tickRatio
+    const travellingWavePoints = this.getTravellingWavePoints(0, a, wt, radius, theta)
     const line = new Line(travellingWavePoints)
     return {
       line,
@@ -162,20 +208,10 @@ export class LeavingForm {
 
   stage2(tickRatio) {
     const theta = -C.HALF_PI - tickRatio * C.TWO_PI
-    const r = this.radiusLength(theta, 1.1)
+    const radius = this.getEllipseRadius(theta, 1.1)
     const a = 0.15
-    const waveLength = r
-    const k = C.TWO_PI / waveLength
-    const f = 25
-    const omega = C.TWO_PI * f
-    const wt = omega * tickRatio
-    const deltaRadius = r / TRAVELLING_WAVE_POINT_COUNT
-    const travellingWavePoints = U.range(TRAVELLING_WAVE_POINT_COUNT + 1).map(n => {
-      const t = n * deltaRadius
-      const x = parametricTravellingWaveX(a, k, wt, theta)(t)
-      const y = parametricTravellingWaveY(a, k, wt, theta)(t)
-      return new THREE.Vector2(x, y)
-    })
+    const wt = OMEGA * tickRatio
+    const travellingWavePoints = this.getTravellingWavePoints(0, a, wt, radius, theta)
     const line = new Line(travellingWavePoints)
     return {
       line,
@@ -185,271 +221,73 @@ export class LeavingForm {
 
   stage3(tickRatio) {
     const a = 0.15
-    const f = 25
-    const waveLength = Math.min(this.rx, this.ry)
-    const k = C.TWO_PI / waveLength
-    const omega = C.TWO_PI * f
-    const wt = omega * tickRatio
-
-    const desiredAngle = C.TWO_PI * tickRatio
-    const convertedAngle = -C.HALF_PI - desiredAngle
-    const theta = convertedAngle - C.PI
-
-    const t1e = convertedAngle
-    const t2e = this.rx * Math.cos(convertedAngle)
-
-    const { t1, t2 } = newtonsMethod(
-      parametricEllipseX(this.rx),
-      parametricEllipseY(this.ry),
-      parametricTravellingWaveX(a, k, wt, theta),
-      parametricTravellingWaveY(a, k, wt, theta),
-      parametricEllipseXDerivative(this.rx),
-      parametricEllipseYDerivative(this.ry),
-      parametricTravellingWaveXDerivative(a, k, wt, theta),
-      parametricTravellingWaveYDerivative(a, k, wt, theta),
-      t1e,
-      t2e)
-
-    const p = new THREE.Vector2(parametricEllipseX(this.rx)(t1), parametricEllipseY(this.ry)(t1))
-    const r = p.length()
-    const deltaRadius = r / TRAVELLING_WAVE_POINT_COUNT
-    const travellingWavePoints = U.range(TRAVELLING_WAVE_POINT_COUNT + 1).map(n => {
-      const t = t2 + n * deltaRadius
-      const x = parametricTravellingWaveX(a, k, wt, theta)(t)
-      const y = parametricTravellingWaveY(a, k, wt, theta)(t)
-      return new THREE.Vector2(x, y)
-    })
-
+    const wt = OMEGA * tickRatio
+    const { theta, t2, p, radius } = this.findPointOfIntersection(tickRatio, a, wt)
+    const travellingWavePoints = this.getTravellingWavePoints(t2, a, wt, radius, theta)
     const line = new Line(travellingWavePoints)
     return {
       line,
-      point: new Point(p),
+      p,
       showEllipseOutline: true
     }
   }
 
   stage4(tickRatio) {
     const a = 0.15
-    const f = 25
-    const waveLength = Math.min(this.rx, this.ry)
-    const k = C.TWO_PI / waveLength
-    const omega = C.TWO_PI * f
-    const wt = omega * tickRatio
-
-    const desiredAngle = C.TWO_PI * tickRatio
-    const convertedAngle = -C.HALF_PI - desiredAngle
-    const theta = convertedAngle - C.PI
-
-    const t1e = convertedAngle
-    const t2e = this.rx * Math.cos(convertedAngle)
-
-    const { t1, t2 } = newtonsMethod(
-      parametricEllipseX(this.rx),
-      parametricEllipseY(this.ry),
-      parametricTravellingWaveX(a, k, wt, theta),
-      parametricTravellingWaveY(a, k, wt, theta),
-      parametricEllipseXDerivative(this.rx),
-      parametricEllipseYDerivative(this.ry),
-      parametricTravellingWaveXDerivative(a, k, wt, theta),
-      parametricTravellingWaveYDerivative(a, k, wt, theta),
-      t1e,
-      t2e)
-
-    const [startAngle, endAngle] = this.growing
-      ? [-C.HALF_PI, t1]
-      : [t1, -C.HALF_PI - C.TWO_PI]
-    const deltaAngle = (endAngle - startAngle) / ELLIPSE_POINT_COUNT
-    const ellipsePoints = U.range(ELLIPSE_POINT_COUNT + 1).map(n => {
-      let t = startAngle + n * deltaAngle
-      let x = parametricEllipseX(this.rx)(t)
-      let y = parametricEllipseY(this.ry)(t)
-      return new THREE.Vector2(x, y)
-    })
-
-    const p = new THREE.Vector2(parametricEllipseX(this.rx)(t1), parametricEllipseY(this.ry)(t1))
-    const r = p.length()
-    const deltaRadius = r / TRAVELLING_WAVE_POINT_COUNT
-    const travellingWavePoints = U.range(TRAVELLING_WAVE_POINT_COUNT + 1).map(n => {
-      const t = t2 + n * deltaRadius
-      const x = parametricTravellingWaveX(a, k, wt, theta)(t)
-      const y = parametricTravellingWaveY(a, k, wt, theta)(t)
-      return new THREE.Vector2(x, y)
-    })
-
+    const wt = OMEGA * tickRatio
+    const { theta, t1, t2, radius } = this.findPointOfIntersection(tickRatio, a, wt)
+    const ellipsePoints = this.getEllipsePoints(t1)
+    const travellingWavePoints = this.getTravellingWavePoints(t2, a, wt, radius, theta)
     let combinedPoints = this.combinePoints(ellipsePoints, travellingWavePoints)
-
+    const line = new Line(combinedPoints)
     return {
-      line: new Line(combinedPoints)
+      line
     }
   }
 
   stage5(tickRatio) {
     const a = 0.15
-    const f = 25
-    const waveLength = Math.min(this.rx, this.ry)
-    const k = C.TWO_PI / waveLength
-    const omega = C.TWO_PI * f
-    const wt = omega * tickRatio
-
-    const desiredAngle = C.TWO_PI * tickRatio
-    const convertedAngle = -C.HALF_PI - desiredAngle
-    const theta = convertedAngle - C.PI
-
-    const t1e = convertedAngle
-    const t2e = this.rx * Math.cos(convertedAngle)
-
-    const { t1, t2 } = newtonsMethod(
-      parametricEllipseX(this.rx),
-      parametricEllipseY(this.ry),
-      parametricTravellingWaveX(a, k, wt, theta),
-      parametricTravellingWaveY(a, k, wt, theta),
-      parametricEllipseXDerivative(this.rx),
-      parametricEllipseYDerivative(this.ry),
-      parametricTravellingWaveXDerivative(a, k, wt, theta),
-      parametricTravellingWaveYDerivative(a, k, wt, theta),
-      t1e,
-      t2e)
-
-    const [startAngle, endAngle] = this.growing
-      ? [-C.HALF_PI, t1]
-      : [t1, -C.HALF_PI - C.TWO_PI]
-    const deltaAngle = (endAngle - startAngle) / ELLIPSE_POINT_COUNT
-    const ellipsePoints = U.range(ELLIPSE_POINT_COUNT + 1).map(n => {
-      let t = startAngle + n * deltaAngle
-      let x = parametricEllipseX(this.rx)(t)
-      let y = parametricEllipseY(this.ry)(t)
-      return new THREE.Vector2(x, y)
-    })
-
-    const p = new THREE.Vector2(parametricEllipseX(this.rx)(t1), parametricEllipseY(this.ry)(t1))
-    const radius = p.length()
+    const wt = OMEGA * tickRatio
+    const { theta, t1, t2, radius } = this.findPointOfIntersection(tickRatio, a, wt)
+    const ellipsePoints = this.getEllipsePoints(t1)
     const radiusRatio = this.travellingWaveRadiusRatio(tickRatio)
-    const deltaRadius = radius * radiusRatio / TRAVELLING_WAVE_POINT_COUNT
-    const travellingWavePoints = U.range(TRAVELLING_WAVE_POINT_COUNT + 1).map(n => {
-      const t = t2 + n * deltaRadius
-      const x = parametricTravellingWaveX(a, k, wt, theta)(t)
-      const y = parametricTravellingWaveY(a, k, wt, theta)(t)
-      return new THREE.Vector2(x, y)
-    })
-
+    const travellingWavePoints = this.getTravellingWavePoints(t2, a, wt, radius * radiusRatio, theta)
     let combinedPoints = this.combinePoints(ellipsePoints, travellingWavePoints)
-
+    const line = new Line(combinedPoints)
     return {
-      line: new Line(combinedPoints)
+      line
     }
   }
 
   stage6(tickRatio) {
     const a = this.travellingWaveAmplitude(tickRatio)
-    const f = 25
-    const waveLength = Math.min(this.rx, this.ry)
-    const k = C.TWO_PI / waveLength
-    const omega = C.TWO_PI * f
-    const wt = omega * tickRatio
-
-    const desiredAngle = C.TWO_PI * tickRatio
-    const convertedAngle = -C.HALF_PI - desiredAngle
-    const theta = convertedAngle - C.PI
-
-    const t1e = convertedAngle
-    const t2e = this.rx * Math.cos(convertedAngle)
-
-    const { t1, t2 } = newtonsMethod(
-      parametricEllipseX(this.rx),
-      parametricEllipseY(this.ry),
-      parametricTravellingWaveX(a, k, wt, theta),
-      parametricTravellingWaveY(a, k, wt, theta),
-      parametricEllipseXDerivative(this.rx),
-      parametricEllipseYDerivative(this.ry),
-      parametricTravellingWaveXDerivative(a, k, wt, theta),
-      parametricTravellingWaveYDerivative(a, k, wt, theta),
-      t1e,
-      t2e)
-
-    const [startAngle, endAngle] = this.growing
-      ? [-C.HALF_PI, t1]
-      : [t1, -C.HALF_PI - C.TWO_PI]
-    const deltaAngle = (endAngle - startAngle) / ELLIPSE_POINT_COUNT
-    const ellipsePoints = U.range(ELLIPSE_POINT_COUNT + 1).map(n => {
-      let t = startAngle + n * deltaAngle
-      let x = parametricEllipseX(this.rx)(t)
-      let y = parametricEllipseY(this.ry)(t)
-      return new THREE.Vector2(x, y)
-    })
-
-    const p = new THREE.Vector2(parametricEllipseX(this.rx)(t1), parametricEllipseY(this.ry)(t1))
-    const radius = p.length()
+    const wt = OMEGA * tickRatio
+    const { theta, t1, t2, radius } = this.findPointOfIntersection(tickRatio, a, wt)
+    const ellipsePoints = this.getEllipsePoints(t1)
     const radiusRatio = this.travellingWaveRadiusRatio(tickRatio)
-    const deltaRadius = radius * radiusRatio / TRAVELLING_WAVE_POINT_COUNT
-    const travellingWavePoints = U.range(TRAVELLING_WAVE_POINT_COUNT + 1).map(n => {
-      const t = t2 + n * deltaRadius
-      const x = parametricTravellingWaveX(a, k, wt, theta)(t)
-      const y = parametricTravellingWaveY(a, k, wt, theta)(t)
-      return new THREE.Vector2(x, y)
-    })
-
+    const travellingWavePoints = this.getTravellingWavePoints(t2, a, wt, radius * radiusRatio, theta)
     let combinedPoints = this.combinePoints(ellipsePoints, travellingWavePoints)
-
+    const line = new Line(combinedPoints)
     return {
-      line: new Line(combinedPoints)
+      line
     }
   }
 
   stage7(tickRatio) {
     const a = this.travellingWaveAmplitude(tickRatio)
-    const f = 25
-    const waveLength = Math.min(this.rx, this.ry)
-    const k = C.TWO_PI / waveLength
-    const omega = C.TWO_PI * f
-    const wt = omega * tickRatio
-
-    const desiredAngle = C.TWO_PI * tickRatio
-    const convertedAngle = -C.HALF_PI - desiredAngle
-    const theta = convertedAngle - C.PI
-
-    const t1e = convertedAngle
-    const t2e = this.rx * Math.cos(convertedAngle)
-
-    const { t1, t2 } = newtonsMethod(
-      parametricEllipseX(this.rx),
-      parametricEllipseY(this.ry),
-      parametricTravellingWaveX(a, k, wt, theta),
-      parametricTravellingWaveY(a, k, wt, theta),
-      parametricEllipseXDerivative(this.rx),
-      parametricEllipseYDerivative(this.ry),
-      parametricTravellingWaveXDerivative(a, k, wt, theta),
-      parametricTravellingWaveYDerivative(a, k, wt, theta),
-      t1e,
-      t2e)
-
-    const [startAngle, endAngle] = this.growing
-      ? [-C.HALF_PI, t1]
-      : [t1, -C.HALF_PI - C.TWO_PI]
-    const deltaAngle = (endAngle - startAngle) / ELLIPSE_POINT_COUNT
-    const ellipsePoints = U.range(ELLIPSE_POINT_COUNT + 1).map(n => {
-      let t = startAngle + n * deltaAngle
-      let x = parametricEllipseX(this.rx)(t)
-      let y = parametricEllipseY(this.ry)(t)
-      return new THREE.Vector2(x, y)
-    })
-
-    const p = new THREE.Vector2(parametricEllipseX(this.rx)(t1), parametricEllipseY(this.ry)(t1))
-    const radius = p.length()
+    const wt = OMEGA * tickRatio
+    const { theta, t1, t2, p, radius } = this.findPointOfIntersection(tickRatio, a, wt)
+    const ellipsePoints = this.getEllipsePoints(t1)
     const radiusRatio = this.travellingWaveRadiusRatio(tickRatio)
-    const deltaRadius = radius * radiusRatio / TRAVELLING_WAVE_POINT_COUNT
     const additionalRotation = this.travellingWaveAdditionalRotation(tickRatio)
-    const travellingWavePoints = U.range(TRAVELLING_WAVE_POINT_COUNT + 1).map(n => {
-      const t = t2 + n * deltaRadius
-      const x = parametricTravellingWaveX(a, k, wt, theta)(t)
-      const y = parametricTravellingWaveY(a, k, wt, theta)(t)
-      const wavePoint = new THREE.Vector2(x, y)
-      return additionalRotation ? wavePoint.rotateAround(p, additionalRotation) : wavePoint
-    })
-
+    const travellingWavePoints = this.getTravellingWavePoints(t2, a, wt, radius * radiusRatio, theta)
+      .map(travellingWavePoint => additionalRotation
+        ? travellingWavePoint.rotateAround(p, additionalRotation)
+        : travellingWavePoint)
     let combinedPoints = this.combinePoints(ellipsePoints, travellingWavePoints)
-
+    const line = new Line(combinedPoints)
     return {
-      line: new Line(combinedPoints)
+      line
     }
   }
 

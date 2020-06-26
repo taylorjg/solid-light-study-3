@@ -57,13 +57,13 @@ class FormRenderer {
   }
 
   update(stage) {
-    const { line, point, showEllipseOutline } = this.form.getShapes(stage)
+    const { line, p, showEllipseOutline } = this.form.getShapes(stage)
     const path = U.vectorsAsArrays(line.points)
     this.lineMesh.geometry.update(path)
-    if (point) {
+    if (p) {
       this.pointMesh.visible = true
-      this.pointMesh.position.x = point.point.x
-      this.pointMesh.position.y = point.point.y
+      this.pointMesh.position.x = p.x
+      this.pointMesh.position.y = p.y
       this.applyTransforms(this.pointMesh)
     } else {
       this.pointMesh.visible = false
