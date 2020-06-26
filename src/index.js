@@ -5,6 +5,7 @@ import { LeavingForm } from './leaving'
 import * as U from './utils'
 import * as C from './constants'
 import './styles.css'
+import { setSizeDependencies } from 'mathjs'
 
 const Line2D = Line2DInit(THREE)
 const Line2DBasicShader = Line2DBasicShaderInit(THREE)
@@ -110,8 +111,15 @@ const main = async () => {
       case '7': return onStageButtonClick(7)
       case '8': return onStageButtonClick(8)
       case '9': return onStageButtonClick(9)
+      case 's': return setSpeed(1)
+      case 'f': return setSpeed(5)
     }
   })
+
+  const setSpeed = multipler => {
+    leftForm.setSpeed(multipler)
+    rightForm.setSpeed(multipler)
+  }
 
   let currentStage
 

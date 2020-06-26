@@ -62,6 +62,7 @@ export class LeavingForm {
     this.k = C.TWO_PI / waveLength
     this.growing = initiallyGrowing
     this.tick = 0
+    this.multiplier = 1
   }
 
   // 0.00 => 0.25: 0.00 => 1.00
@@ -305,17 +306,13 @@ export class LeavingForm {
   }
 
   getShapes(stage) {
-
     const tickRatio = this.tick / MAX_TICKS
-
-    const result = this.doStage(stage, tickRatio)
-
-    this.tick += 1
+    const shapes = this.doStage(stage, tickRatio)
+    this.tick += this.multiplier
     if (this.tick > MAX_TICKS) {
       this.toggleGrowing()
     }
-
-    return result
+    return shapes
   }
 
   toggleGrowing() {
@@ -325,5 +322,12 @@ export class LeavingForm {
 
   reset() {
     this.tick = 0
+  }
+
+  setSpeed(multiplier) {
+    this.multiplier = multiplier
+    if (multiplier > 1) {
+      this.tick += (multiplier - this.tick % multiplier) % multiplier
+    }
   }
 }
