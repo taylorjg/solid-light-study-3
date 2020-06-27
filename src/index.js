@@ -4,8 +4,7 @@ import Line2DBasicShaderInit from 'three-line-2d/shaders/basic'
 import { LeavingForm } from './leaving'
 import * as U from './utils'
 import * as C from './constants'
-import './styles.css'
-import { setSizeDependencies } from 'mathjs'
+import './style.css'
 
 const Line2D = Line2DInit(THREE)
 const Line2DBasicShader = Line2DBasicShaderInit(THREE)
@@ -143,13 +142,13 @@ const main = async () => {
 
   const updateActiveStageButton = stage => {
     currentStage = stage
-    const stageButtonElements = Array.from(document.querySelectorAll('.stage-button'))
+    const stageButtonElements = Array.from(document.querySelectorAll('#stage-buttons button'))
     stageButtonElements.forEach((stageButtonElement, index) => {
       if (index == stage) {
-        stageButtonElement.setAttribute('class', 'stage-button stage-button--active')
+        stageButtonElement.setAttribute('class', 'mx-1 p-1 text-white text-lg bg-blue-600')
         stageButtonElement.focus()
       } else {
-        stageButtonElement.setAttribute('class', 'stage-button')
+        stageButtonElement.setAttribute('class', 'mx-1 p-1 text-black text-lg bg-blue-200')
       }
     })
   }
@@ -167,13 +166,13 @@ const main = async () => {
 
   const onSpeedButtonClick = multiplier => {
     setSpeed(multiplier)
-    const speedButtonElements = Array.from(document.querySelectorAll('.speed-button'))
+    const speedButtonElements = Array.from(document.querySelectorAll('#speed-buttons button'))
     speedButtonElements.forEach(speedButtonElement => {
       if (multiplier === Number(speedButtonElement.dataset.multiplier)) {
-        speedButtonElement.setAttribute('class', 'speed-button speed-button--active')
+        speedButtonElement.setAttribute('class', 'mx-1 px-1 text-white text-lg bg-pink-600')
         speedButtonElement.focus()
       } else {
-        speedButtonElement.setAttribute('class', 'speed-button')
+        speedButtonElement.setAttribute('class', 'mx-1 px-1 text-black text-lg bg-pink-200')
       }
     })
   }
@@ -181,7 +180,6 @@ const main = async () => {
   const createStageButton = stage => {
     const parentElement = document.getElementById('stage-buttons')
     const stageButtonElement = document.createElement('button')
-    stageButtonElement.setAttribute('class', 'stage-button')
     stageButtonElement.innerText = stage
     stageButtonElement.addEventListener('click', () => onStageButtonClick(stage))
     parentElement.appendChild(stageButtonElement)
@@ -189,7 +187,7 @@ const main = async () => {
 
   STAGE_DESCRIPTIONS.forEach((_, index) => createStageButton(index))
 
-  Array.from(document.querySelectorAll('.speed-button')).forEach(speedButtonElement => {
+  Array.from(document.querySelectorAll('#speed-buttons button')).forEach(speedButtonElement => {
     const multiplier = Number(speedButtonElement.dataset.multiplier)
     speedButtonElement.addEventListener('click', () => onSpeedButtonClick(multiplier))
   })

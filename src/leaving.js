@@ -173,7 +173,7 @@ export class LeavingForm {
   combinePoints(ellipsePoints, travellingWavePoints) {
     const p1 = travellingWavePoints[0]
     const p2 = travellingWavePoints.slice(-1)[0]
-    if (p1.distanceTo(p2) < 0.001) {
+    if (p1.distanceTo(p2) < 0.01) {
       return ellipsePoints
     }
     const travellingWavePointsTail = travellingWavePoints.slice(1)
