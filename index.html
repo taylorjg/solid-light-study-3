@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html class="h-full w-full m-0">
 
 <head>
   <meta charset="utf-8">
@@ -7,22 +7,23 @@
   <title>Solid Light - Study 3</title>
 </head>
 
-<body>
-  <div id="container"></div>
-  <div id="controls">
-    <div id="buttons">
-      <div id="stage-buttons">
-        <label class="buttons-label">Stage:</label>
+<body class="h-full w-full m-0">
+  <div class="h-full w-full" id="container"></div>
+  <div class="fixed bottom-0 w-full">
+    <div class="flex justify-center">
+      <div class="flex justify-center items-center" id="stage-buttons">
+        <label class="mr-1 text-white">Stage:</label>
       </div>
-      <div id="speed-buttons">
-        <label class="buttons-label">Speed:</label>
-        <button class="speed-button" data-multiplier="1">Slow</button>
-        <button class="speed-button" data-multiplier="5">Fast</button>
+      <div class="ml-8 flex justify-center items-center" id="speed-buttons">
+        <label class="mr-1 text-white">Speed:</label>
+        <button data-multiplier="1">Slow</button>
+        <button data-multiplier="5">Fast</button>
       </div>
     </div>
-    <div id="stage-description"></div>
+    <div class="m-2 text-white text-lg text-center italic" id="stage-description"></div>
   </div>
-  <div class="version">version: 0.0.7</div>
+  <div class="fixed bottom-0 right-0 m-4 text-white text-xs italic">version: 0.0.8
+  </div>
 <script type="text/javascript" src="bundle.js"></script></body>
 
 </html>
