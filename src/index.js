@@ -128,10 +128,10 @@ const main = async () => {
     'Travelling wave along static radius',
     'Travelling wave along rotating radius',
     'Travelling wave clipped to ellipse with point of intersection highlighted',
-    'As previous plus elliptical arcs',
-    'As previous plus varying radius length',
-    'As previous plus varying travelling wave amplitude',
-    'As previous plus additional rotation of travelling wave'
+    'As previous stage plus elliptical arcs',
+    'As previous stage plus varying radius length',
+    'As previous stage plus varying travelling wave amplitude',
+    'As previous stage plus additional rotation of travelling wave'
   ]
 
   const render = () => {
@@ -194,7 +194,7 @@ const main = async () => {
     speedButtonElement.addEventListener('click', () => onSpeedButtonClick(multiplier))
   })
 
-  onSpeedButtonClick(1)
+  onSpeedButtonClick(5)
   onStageButtonClick(0)
   renderer.render(scene, camera)
   render()
