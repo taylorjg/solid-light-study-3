@@ -145,10 +145,10 @@ const main = async () => {
     const stageButtonElements = Array.from(document.querySelectorAll('#stage-buttons button'))
     stageButtonElements.forEach((stageButtonElement, index) => {
       if (index == stage) {
-        stageButtonElement.setAttribute('class', 'mx-1 p-1 text-white text-lg bg-blue-600')
-        stageButtonElement.focus()
+        stageButtonElement.setAttribute('class', 'mx-1 px-1 w-6 rounded text-white text-lg bg-blue-600 border-2 border-white')
+        document.body.focus()
       } else {
-        stageButtonElement.setAttribute('class', 'mx-1 p-1 text-black text-lg bg-blue-200')
+        stageButtonElement.setAttribute('class', 'mx-1 px-1 w-6 rounded text-black text-lg bg-blue-200 border-2 border-white border-opacity-0')
       }
     })
   }
@@ -169,10 +169,10 @@ const main = async () => {
     const speedButtonElements = Array.from(document.querySelectorAll('#speed-buttons button'))
     speedButtonElements.forEach(speedButtonElement => {
       if (multiplier === Number(speedButtonElement.dataset.multiplier)) {
-        speedButtonElement.setAttribute('class', 'mx-1 px-1 text-white text-lg bg-pink-600')
-        speedButtonElement.focus()
+        speedButtonElement.setAttribute('class', 'mx-1 px-1 w-14 rounded text-white text-lg bg-pink-600 border-2 border-white')
+        document.body.focus()
       } else {
-        speedButtonElement.setAttribute('class', 'mx-1 px-1 text-black text-lg bg-pink-200')
+        speedButtonElement.setAttribute('class', 'mx-1 px-1 w-14 rounded text-black text-lg bg-pink-200 border-2 border-white border-opacity-0')
       }
     })
   }
