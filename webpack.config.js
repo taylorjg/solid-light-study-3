@@ -15,11 +15,12 @@ module.exports = {
     filename: 'bundle.js',
   },
   plugins: [
-    new CopyWebpackPlugin([
-      { context: './src', from: '*.html' },
-      { context: './src', from: '*.css' },
-      { context: './src', from: '*.jpg' }
-    ]),
+    new CopyWebpackPlugin({
+      patterns: [
+        { context: './src', from: '*.html' },
+        { context: './src', from: '*.css' }
+      ]
+    }),
     new HtmlWebpackPlugin({
       template: './src/index.html',
       version
