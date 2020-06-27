@@ -8,7 +8,7 @@ const { version } = require('./package.json')
 const PUBLIC_FOLDER = path.resolve(__dirname, 'server', 'public')
 
 module.exports = {
-  mode: 'development',
+  mode: process.env.NODE_ENV || 'development',
   entry: './src/index.js',
   output: {
     path: PUBLIC_FOLDER,

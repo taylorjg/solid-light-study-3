@@ -4,7 +4,7 @@ set -euo pipefail
 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-(cd "$DIR" && npm run build)
+(cd "$DIR" && NODE_ENV=production npm run build)
 
 GH_PAGES_DIR=$DIR/../solid-light-study-3-gh-pages
 
