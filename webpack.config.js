@@ -2,13 +2,16 @@
 
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const path = require('path')
 const { version } = require('./package.json')
+
+const { NODE_ENV } = process.env
 
 const PUBLIC_FOLDER = path.resolve(__dirname, 'server', 'public')
 
 module.exports = {
-  mode: process.env.NODE_ENV || 'development',
+  mode: NODE_ENV || 'development',
   entry: './src/index.js',
   output: {
     path: PUBLIC_FOLDER,
@@ -17,14 +20,14 @@ module.exports = {
   plugins: [
     new CopyWebpackPlugin({
       patterns: [
-        { context: './src', from: '*.html' },
-        { context: './src', from: '*.css' }
+        { context: './src', from: '*.html' }
       ]
     }),
     new HtmlWebpackPlugin({
       template: './src/index.html',
       version
-    })
+    }),
+    new MiniCssExtractPlugin()
   ],
   module: {
     rules: [
@@ -36,18 +39,9 @@ module.exports = {
         test: /\.css$/,
         exclude: /node_modules/,
         use: [
-          {
-            loader: 'style-loader',
-          },
-          {
-            loader: 'css-loader',
-            options: {
-              importLoaders: 1,
-            }
-          },
-          {
-            loader: 'postcss-loader'
-          }
+          NODE_ENV === 'production' ? MiniCssExtractPlugin.loader : 'style-loader',
+          'css-loader',
+          'postcss-loader'
         ]
       }
     ]
